@@ -159,11 +159,8 @@ impl Runner {
         }
         #[cfg(not(unix))]
         {
-            run.child
-                .lock()
-                .unwrap()
-                .kill()
-                .map_err(|e| format!("Could not stop rsync: {e}"))
+            let result = run.child.lock().unwrap().kill();
+            result.map_err(|e| format!("Could not stop rsync: {e}"))
         }
     }
 }

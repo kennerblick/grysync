@@ -1,6 +1,7 @@
 // Turns a Profile into the argument vector handed to rsync, plus a
 // copy-pasteable shell command and a list of warnings.
 
+import type { MessageKey, Params } from "./locales";
 import type { Endpoint, Profile } from "./model";
 import { compareVersions, optionById, options } from "./options";
 
@@ -126,19 +127,21 @@ export function commandLine(program: string, args: string[]): string {
 export type Level = "error" | "warn" | "info";
 export interface Issue {
   level: Level;
-  text: string;
+  /** Translation key; render with `t(issue.key, issue.params)`. */
+  key: MessageKey;
+  params?: Params;
 }
 
-const conflicts: [string, string, string][] = [
-  ["checksum", "size-only", "Compare by checksum and Compare size only exclude each other."],
-  ["links", "copy-links", "Follow symlinks overrides Copy symlinks as symlinks."],
-  ["inplace", "delay-updates", "In-place updates cannot be combined with Delay updates."],
-  ["inplace", "partial-dir", "In-place updates ignore the partial-file directory."],
-  ["quiet", "verbose", "Quiet and Verbose cancel each other out."],
-  ["existing", "ignore-existing", "Only update existing + Skip existing files transfers nothing."],
-  ["append", "append-verify", "Choose either Append or Append and verify."],
-  ["ipv4", "ipv6", "Choose either IPv4 or IPv6."],
-  ["whole-file", "inplace", "Whole-file copies make in-place updates pointless."],
+const conflicts: [string, string, MessageKey][] = [
+  ["checksum", "size-only", "conflict.checksumSizeOnly"],
+  ["links", "copy-links", "conflict.linksCopyLinks"],
+  ["inplace", "delay-updates", "conflict.inplaceDelay"],
+  ["inplace", "partial-dir", "conflict.inplacePartialDir"],
+  ["quiet", "verbose", "conflict.quietVerbose"],
+  ["existing", "ignore-existing", "conflict.existingIgnoreExisting"],
+  ["append", "append-verify", "conflict.appendVerify"],
+  ["ipv4", "ipv6", "conflict.ipv4ipv6"],
+  ["whole-file", "inplace", "conflict.wholeFileInplace"],
 ];
 
 const deleteOptions = [
@@ -160,71 +163,43 @@ export function validate(p: Profile, rsyncVersion?: string): Issue[] {
   const issues: Issue[] = [];
   const hasEndpoint = (e: Endpoint) => (e.kind === "local" ? !!e.path.trim() : !!e.host.trim());
 
-  if (!hasEndpoint(p.source)) issues.push({ level: "error", text: "Choose a source." });
-  if (!hasEndpoint(p.dest) && !isSet(p, "list-only")) issues.push({ level: "error", text: "Choose a destination." });
+  if (!hasEndpoint(p.source)) issues.push({ level: "error", key: "issue.noSource" });
+  if (!hasEndpoint(p.dest) && !isSet(p, "list-only")) issues.push({ level: "error", key: "issue.noDest" });
   if (p.source.kind !== "local" && p.dest.kind !== "local") {
-    issues.push({ level: "error", text: "rsync cannot copy between two remote hosts; one side must be local." });
+    issues.push({ level: "error", key: "issue.remoteToRemote" });
   }
 
-  for (const [a, b, text] of conflicts) {
-    if (isSet(p, a) && isSet(p, b)) issues.push({ level: "warn", text });
+  for (const [a, b, key] of conflicts) {
+    if (isSet(p, a) && isSet(p, b)) issues.push({ level: "warn", key });
   }
 
   if (deletesFiles(p) && !isSet(p, "dry-run")) {
-    issues.push({ level: "warn", text: "This profile deletes files. Run a dry run first to see what would be removed." });
+    issues.push({ level: "warn", key: "issue.deletesWithoutDryRun" });
   }
   if (isSet(p, "delete") && p.source.kind === "local" && p.source.path && !/[\\/]$/.test(p.source.path)) {
-    issues.push({
-      level: "info",
-      text: "The source has no trailing slash, so the folder itself is copied into the destination. Add / to mirror its contents.",
-    });
+    issues.push({ level: "info", key: "issue.noTrailingSlash" });
   }
   if (isSet(p, "link-dest") && !isSet(p, "archive") && !isSet(p, "times")) {
-    issues.push({ level: "warn", text: "Hard-link snapshots need preserved times (-t or -a) to detect unchanged files." });
+    issues.push({ level: "warn", key: "issue.linkDestTimes" });
   }
 
   if (rsyncVersion) {
     for (const o of options) {
       if (o.since && isSet(p, o.id) && compareVersions(rsyncVersion, o.since) < 0) {
-        issues.push({ level: "error", text: `--${o.id} needs rsync ${o.since} or newer (installed: ${rsyncVersion}).` });
+        issues.push({
+          level: "error",
+          key: "issue.tooOld",
+          params: { option: o.id, since: o.since, version: rsyncVersion },
+        });
       }
     }
     if (p.liveProgress && compareVersions(rsyncVersion, "3.1.0") < 0) {
-      issues.push({ level: "warn", text: "Live progress needs rsync 3.1.0+; disable it in the command bar." });
+      issues.push({ level: "warn", key: "issue.progressTooOld" });
     }
   }
 
   for (const id of Object.keys(p.options)) {
-    if (!optionById.has(id)) issues.push({ level: "info", text: `Unknown option "${id}" is ignored.` });
+    if (!optionById.has(id)) issues.push({ level: "info", key: "issue.unknownOption", params: { option: id } });
   }
   return issues;
-}
-
-/** Human-readable meaning of rsync's exit codes. */
-export function exitMessage(code: number | null): string {
-  const messages: Record<number, string> = {
-    0: "Success",
-    1: "Syntax or usage error",
-    2: "Protocol incompatibility",
-    3: "Errors selecting input/output files or directories",
-    4: "Requested action not supported",
-    5: "Error starting client-server protocol",
-    6: "Daemon unable to append to log file",
-    10: "Error in socket I/O",
-    11: "Error in file I/O",
-    12: "Error in rsync protocol data stream",
-    13: "Errors with program diagnostics",
-    14: "Error in IPC code",
-    20: "Received SIGUSR1 or SIGINT",
-    21: "Some error returned by waitpid()",
-    22: "Error allocating core memory buffers",
-    23: "Partial transfer due to error",
-    24: "Partial transfer due to vanished source files",
-    25: "The --max-delete limit stopped deletions",
-    30: "Timeout in data send/receive",
-    35: "Timeout waiting for daemon connection",
-    255: "Remote shell failed (check host, credentials and SSH keys)",
-  };
-  if (code === null) return "Terminated by a signal";
-  return messages[code] ?? `Exit code ${code}`;
 }

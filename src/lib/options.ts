@@ -268,13 +268,9 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-export function matchesSearch(o: RsyncOption, query: string): boolean {
+/** `texts` are the option's label and help in every UI language. */
+export function matchesSearch(o: RsyncOption, query: string, texts: string[] = [o.label, o.help]): boolean {
   const q = query.trim().toLowerCase().replace(/^-+/, "");
   if (!q) return true;
-  return (
-    o.id.includes(q) ||
-    o.short === q ||
-    o.label.toLowerCase().includes(q) ||
-    o.help.toLowerCase().includes(q)
-  );
+  return o.id.includes(q) || o.short === q || texts.some((s) => s.toLowerCase().includes(q));
 }

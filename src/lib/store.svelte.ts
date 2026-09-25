@@ -1,6 +1,7 @@
 import * as api from "./api";
 import type { Progress, RsyncInfo } from "./api";
 import { buildArgs, commandLine } from "./args";
+import { i18n, t } from "./i18n.svelte";
 import { defaultState, newProfile, type AppState, type Profile } from "./model";
 
 export type RunStatus = "idle" | "running" | "success" | "failed" | "cancelled";
@@ -14,7 +15,7 @@ const MAX_LOG_LINES = 5000;
 const MAX_HISTORY = 100;
 
 class Store {
-  state = $state<AppState>(defaultState());
+  state = $state<AppState>(defaultState(t("profile.first")));
   loaded = $state(false);
   saveError = $state<string | null>(null);
 
@@ -46,7 +47,7 @@ class Store {
     try {
       const saved = await api.loadState();
       if (saved && Array.isArray(saved.profiles) && saved.profiles.length) {
-        const defaults = defaultState();
+        const defaults = defaultState(t("profile.first"));
         this.state = {
           ...defaults,
           ...saved,
@@ -56,7 +57,7 @@ class Store {
         };
       }
     } catch (e) {
-      this.saveError = `Could not load settings: ${e}`;
+      this.saveError = t("store.loadError", { e: String(e) });
     }
     this.loaded = true;
 
@@ -67,12 +68,16 @@ class Store {
         this.#saveTimer = setTimeout(() => {
           api.saveState(snapshot).then(
             () => (this.saveError = null),
-            (e) => (this.saveError = `Could not save: ${e}`),
+            (e) => (this.saveError = t("store.saveError", { e: String(e) })),
           );
         }, 400);
       });
       $effect(() => {
         document.documentElement.dataset.theme = this.state.settings.theme;
+      });
+      $effect(() => {
+        i18n.setPreference(this.state.settings.language);
+        document.documentElement.lang = i18n.locale;
       });
     });
 
@@ -91,8 +96,8 @@ class Store {
 
   addProfile(from?: Profile) {
     const p: Profile = from
-      ? { ...structuredClone($state.snapshot(from)), id: newProfile().id, name: `${from.name} (copy)` }
-      : newProfile();
+      ? { ...structuredClone($state.snapshot(from)), id: newProfile().id, name: t("profile.copyOf", { name: from.name }) }
+      : newProfile(t("profile.new"));
     this.state.profiles.push(p);
     this.state.activeId = p.id;
   }
@@ -161,7 +166,7 @@ class Store {
     if (this.runId === null) return;
     try {
       await api.cancelSync(this.runId);
-      this.#log({ stream: "sys", text: "Stopping rsync…" });
+      this.#log({ stream: "sys", text: t("run.stopping") });
     } catch (e) {
       this.#log({ stream: "err", text: String(e) });
     }

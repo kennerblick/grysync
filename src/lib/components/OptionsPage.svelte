@@ -1,5 +1,7 @@
 <script lang="ts">
   import { categories, matchesSearch, options, type CategoryId } from "../options";
+  import { categoryBlurb, categoryLabel, t } from "../i18n.svelte";
+  import { optionSearchTexts } from "../locales";
   import FilterEditor from "./FilterEditor.svelte";
   import OptionRow from "./OptionRow.svelte";
 
@@ -10,7 +12,7 @@
       .filter((c) => (search ? true : c.id === category))
       .map((c) => ({
         ...c,
-        items: options.filter((o) => o.category === c.id && matchesSearch(o, search)),
+        items: options.filter((o) => o.category === c.id && matchesSearch(o, search, optionSearchTexts(o))),
       }))
       .filter((g) => g.items.length || (!search && g.id === "filters")),
   );
@@ -24,15 +26,15 @@
   {#each groups as g (g.id)}
     <section class="card">
       <header>
-        <h3>{g.icon} {g.label}</h3>
-        <span class="muted">{g.blurb}</span>
+        <h3>{g.icon} {categoryLabel(g)}</h3>
+        <span class="muted">{categoryBlurb(g)}</span>
       </header>
       {#each g.items as o (o.id)}
         <OptionRow option={o} />
       {/each}
     </section>
   {:else}
-    <div class="card empty muted">No option matches “{search}”.</div>
+    <div class="card empty muted">{t("options.noMatch", { q: search })}</div>
   {/each}
 </div>
 

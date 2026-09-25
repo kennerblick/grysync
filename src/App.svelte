@@ -7,6 +7,7 @@
   import Sidebar, { type View } from "./lib/components/Sidebar.svelte";
   import SyncPage from "./lib/components/SyncPage.svelte";
   import { categories, type CategoryId } from "./lib/options";
+  import { t } from "./lib/i18n.svelte";
   import { store } from "./lib/store.svelte";
 
   let view = $state<View>("sync");
@@ -18,11 +19,11 @@
   const isCategory = $derived(categories.some((c) => c.id === view));
   const title = $derived(
     search
-      ? `Search: “${search}”`
+      ? t("app.searchTitle", { q: search })
       : view === "activity"
-        ? "Activity"
+        ? t("nav.activity")
         : view === "settings"
-          ? "Settings"
+          ? t("nav.settings")
           : null,
   );
 
@@ -61,13 +62,13 @@
         {#if title}
           <h1>{title}</h1>
         {:else}
-          <input class="profile-name" bind:value={store.profile.name} aria-label="Profile name" />
+          <input class="profile-name" bind:value={store.profile.name} aria-label={t("profile.name")} />
           <div class="top-actions">
-            <button class="btn small ghost" onclick={() => store.addProfile(store.profile)}>Duplicate</button>
+            <button class="btn small ghost" onclick={() => store.addProfile(store.profile)}>{t("profile.duplicate")}</button>
             <button
               class="btn small ghost"
               disabled={store.state.profiles.length <= 1}
-              onclick={() => store.deleteProfile(store.profile.id)}>Delete</button
+              onclick={() => store.deleteProfile(store.profile.id)}>{t("profile.delete")}</button
             >
           </div>
         {/if}
@@ -94,16 +95,13 @@
   {#if confirming}
     <div class="backdrop" role="presentation" onclick={() => (confirming = false)}>
       <div class="dialog card" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
-        <h2>This run deletes files</h2>
-        <p class="muted">
-          “{store.profile.name}” removes files that are not in the source (or removes files from the source after
-          copying). A dry run shows exactly what would happen.
-        </p>
+        <h2>{t("confirm.title")}</h2>
+        <p class="muted">{t("confirm.text", { name: store.profile.name })}</p>
         <code class="cmd">{commandLine(store.program, buildArgs(store.profile))}</code>
         <div class="dialog-actions">
-          <button class="btn" onclick={() => (confirming = false)}>Cancel</button>
-          <button class="btn" onclick={() => go(true)}>Dry run first</button>
-          <button class="btn danger" onclick={() => go(false)}>Run anyway</button>
+          <button class="btn" onclick={() => (confirming = false)}>{t("common.cancel")}</button>
+          <button class="btn" onclick={() => go(true)}>{t("confirm.dryFirst")}</button>
+          <button class="btn danger" onclick={() => go(false)}>{t("confirm.runAnyway")}</button>
         </div>
       </div>
     </div>
@@ -113,7 +111,7 @@
 <style>
   .app {
     display: grid;
-    grid-template-columns: 250px minmax(0, 1fr);
+    grid-template-columns: 272px minmax(0, 1fr);
     grid-template-rows: 1fr auto;
     height: 100%;
   }

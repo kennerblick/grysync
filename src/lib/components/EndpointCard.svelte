@@ -1,14 +1,16 @@
 <script lang="ts">
   import { pickPath } from "../api";
   import { endpointToArg } from "../args";
+  import { t } from "../i18n.svelte";
+  import type { MessageKey } from "../locales";
   import type { Endpoint, EndpointKind } from "../model";
 
-  let { endpoint: e, title, isSource = false }: { endpoint: Endpoint; title: string; isSource?: boolean } = $props();
+  let { endpoint: e, isSource = false }: { endpoint: Endpoint; isSource?: boolean } = $props();
 
-  const kinds: { id: EndpointKind; label: string }[] = [
-    { id: "local", label: "Local" },
-    { id: "ssh", label: "SSH" },
-    { id: "daemon", label: "rsync daemon" },
+  const kinds: { id: EndpointKind; label: MessageKey }[] = [
+    { id: "local", label: "endpoint.local" },
+    { id: "ssh", label: "endpoint.ssh" },
+    { id: "daemon", label: "endpoint.daemon" },
   ];
 
   const hasSlash = $derived(/[\\/]$/.test(e.path));
@@ -20,48 +22,48 @@
   }
 
   async function browse() {
-    const path = await pickPath(true, `Choose ${title.toLowerCase()} folder`);
+    const path = await pickPath(true, t(isSource ? "endpoint.chooseSource" : "endpoint.chooseDest"));
     if (path) e.path = isSource && hasSlash && !/[\\/]$/.test(path) ? path + "/" : path;
   }
 </script>
 
 <section class="card endpoint">
   <header>
-    <h3>{title}</h3>
+    <h3>{t(isSource ? "endpoint.source" : "endpoint.dest")}</h3>
     <div class="segmented">
       {#each kinds as k}
-        <button class:on={e.kind === k.id} onclick={() => (e.kind = k.id)}>{k.label}</button>
+        <button class:on={e.kind === k.id} onclick={() => (e.kind = k.id)}>{t(k.label)}</button>
       {/each}
     </div>
   </header>
 
   {#if e.kind === "local"}
     <label class="field">
-      <span>Folder</span>
+      <span>{t("endpoint.folder")}</span>
       <div class="line">
         <input bind:value={e.path} placeholder={isSource ? "/home/me/Documents/" : "/media/backup/Documents"} />
-        <button class="btn" onclick={browse}>Browse…</button>
+        <button class="btn" onclick={browse}>{t("common.browse")}</button>
       </div>
     </label>
   {:else}
     <div class="grid">
       <label class="field">
-        <span>User</span>
-        <input bind:value={e.user} placeholder="optional" />
+        <span>{t("endpoint.user")}</span>
+        <input bind:value={e.user} placeholder={t("endpoint.optional")} />
       </label>
       <label class="field">
-        <span>Host</span>
+        <span>{t("endpoint.host")}</span>
         <input bind:value={e.host} placeholder="nas.local" />
       </label>
       {#if e.kind === "daemon"}
         <label class="field small">
-          <span>Port</span>
+          <span>{t("endpoint.port")}</span>
           <input bind:value={e.port} placeholder="873" inputmode="numeric" />
         </label>
       {/if}
     </div>
     <label class="field">
-      <span>{e.kind === "daemon" ? "Module / path" : "Remote path"}</span>
+      <span>{t(e.kind === "daemon" ? "endpoint.modulePath" : "endpoint.remotePath")}</span>
       <input bind:value={e.path} placeholder={e.kind === "daemon" ? "backup/documents/" : "/srv/backup/"} />
     </label>
   {/if}
@@ -70,16 +72,14 @@
     <button class="contents" onclick={toggleContents} disabled={!e.path}>
       <span class="switch" class:on={hasSlash}></span>
       <span>
-        <strong>Copy folder contents</strong>
-        <span class="muted">
-          {hasSlash ? "Trailing / — the contents are copied into the destination." : "No trailing / — the folder itself is created inside the destination."}
-        </span>
+        <strong>{t("endpoint.contents")}</strong>
+        <span class="muted">{t(hasSlash ? "endpoint.contentsOn" : "endpoint.contentsOff")}</span>
       </span>
     </button>
   {/if}
 
   {#if preview}
-    <code class="preview" title="As passed to rsync">{preview}</code>
+    <code class="preview" title={t("endpoint.previewTitle")}>{preview}</code>
   {/if}
 </section>
 

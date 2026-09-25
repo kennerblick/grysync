@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { buildArgs, commandLine, exitMessage, validate } from "../args";
+  import { buildArgs, commandLine, validate } from "../args";
+  import { exitMessage, t } from "../i18n.svelte";
   import { store } from "../store.svelte";
   import { formatBytes, formatDuration } from "../format";
 
@@ -28,13 +29,13 @@
   {#if showIssues && issues.length}
     <ul class="issues">
       {#each issues as i}
-        <li class={i.level}><span class="dot"></span>{i.text}</li>
+        <li class={i.level}><span class="dot"></span>{t(i.key, i.params)}</li>
       {/each}
     </ul>
   {/if}
 
   {#if store.status !== "idle"}
-    <button class="status {store.status}" onclick={onOpenActivity} title="Show activity">
+    <button class="status {store.status}" onclick={onOpenActivity} title={t("run.showActivity")}>
       <div class="track">
         <div
           class="fill"
@@ -44,24 +45,24 @@
       </div>
       <div class="stats">
         {#if running}
-          <strong>{store.dryRun ? "Dry run" : "Syncing"} {p ? `${p.percent}%` : "…"}</strong>
+          <strong>{t(store.dryRun ? "run.dryRunning" : "run.syncing")} {p ? `${p.percent}%` : "…"}</strong>
           {#if p}
             <span>{formatBytes(p.bytes)}</span>
             <span>{p.rate}</span>
-            <span>ETA {p.eta}</span>
-            {#if p.transferred !== null}<span>{p.transferred} files</span>{/if}
-            {#if p.incremental}<span class="muted">scanning…</span>{/if}
+            <span>{t("run.eta", { eta: p.eta })}</span>
+            {#if p.transferred !== null}<span>{t("run.files", { n: p.transferred })}</span>{/if}
+            {#if p.incremental}<span class="muted">{t("run.scanning")}</span>{/if}
           {/if}
         {:else}
           <strong>
-            {store.status === "success" ? "✓ Done" : store.status === "cancelled" ? "Stopped" : "✕ Failed"}
-            {store.dryRun ? "(dry run)" : ""}
+            {t(store.status === "success" ? "run.done" : store.status === "cancelled" ? "run.stopped" : "run.failed")}
+            {store.dryRun ? t("run.dryRunSuffix") : ""}
           </strong>
           <span>{exitMessage(store.exitCode)}</span>
           <span>{formatDuration(store.durationMs)}</span>
           {#if p}<span>{formatBytes(p.bytes)}</span>{/if}
         {/if}
-        <span class="link">View log →</span>
+        <span class="link">{t("run.viewLog")}</span>
       </div>
     </button>
   {/if}
@@ -71,27 +72,29 @@
       <span class="prompt">$</span>
       <code title={command}>{command}</code>
       <div class="cmd-actions">
-        <button class="icon-btn" title={expanded ? "Collapse" : "Expand"} onclick={() => (expanded = !expanded)}>{expanded ? "▾" : "▸"}</button>
-        <button class="icon-btn" title="Copy command" onclick={copy}>{copied ? "✓" : "⧉"}</button>
+        <button class="icon-btn" title={t(expanded ? "run.collapse" : "run.expand")} onclick={() => (expanded = !expanded)}>{expanded ? "▾" : "▸"}</button>
+        <button class="icon-btn" title={t("run.copy")} onclick={copy}>{copied ? "✓" : "⧉"}</button>
       </div>
     </div>
 
-    <label class="progress-toggle" title="Adds --info=progress2 for the overall progress bar">
+    <label class="progress-toggle" title={t("run.liveProgressTitle")}>
       <input type="checkbox" bind:checked={store.profile.liveProgress} />
-      Live progress
+      {t("run.liveProgress")}
     </label>
 
     {#if issues.length}
       <button class="issue-btn" class:has-errors={errors.length > 0} onclick={() => (showIssues = !showIssues)}>
-        {errors.length ? `${errors.length} error${errors.length > 1 ? "s" : ""}` : `${issues.length} hint${issues.length > 1 ? "s" : ""}`}
+        {errors.length
+          ? t(errors.length === 1 ? "run.errorsOne" : "run.errorsMany", { n: errors.length })
+          : t(issues.length === 1 ? "run.hintsOne" : "run.hintsMany", { n: issues.length })}
       </button>
     {/if}
 
     {#if running}
-      <button class="btn danger" onclick={() => store.cancel()}>■ Stop</button>
+      <button class="btn danger" onclick={() => store.cancel()}>{t("run.stop")}</button>
     {:else}
-      <button class="btn" disabled={errors.length > 0} onclick={() => onRun(true)}>Dry run</button>
-      <button class="btn primary" disabled={errors.length > 0} onclick={() => onRun(false)}>▶ Run</button>
+      <button class="btn" disabled={errors.length > 0} onclick={() => onRun(true)}>{t("run.dryRun")}</button>
+      <button class="btn primary" disabled={errors.length > 0} onclick={() => onRun(false)}>{t("run.run")}</button>
     {/if}
   </div>
 </footer>

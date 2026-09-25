@@ -1,5 +1,6 @@
 <script lang="ts">
   import { uid, type FilterAction } from "../model";
+  import { t } from "../i18n.svelte";
   import { store } from "../store.svelte";
 
   const rules = $derived(store.profile.filters);
@@ -21,12 +22,8 @@
 <section class="card filters">
   <header>
     <div>
-      <h3>Filter rules</h3>
-      <p class="muted">
-        Rules are checked top to bottom; the first match wins. Patterns ending in <code>/</code> match directories,
-        <code>*</code> matches within a path segment and <code>**</code> across segments. To copy only some files,
-        include them (and their parent dirs with <code>*/</code>) and finish with an exclude of <code>*</code>.
-      </p>
+      <h3>{t("filters.title")}</h3>
+      <p class="muted">{t("filters.help")}</p>
     </div>
   </header>
 
@@ -36,34 +33,34 @@
         <li class:off={!r.enabled}>
           <span class="n">{i + 1}</span>
           <select bind:value={r.action} class="action {r.action}">
-            <option value="exclude">exclude</option>
-            <option value="include">include</option>
-            <option value="filter">filter rule</option>
+            <option value="exclude">{t("filters.exclude")}</option>
+            <option value="include">{t("filters.include")}</option>
+            <option value="filter">{t("filters.filter")}</option>
           </select>
           <input
             class="mono"
             bind:value={r.pattern}
-            placeholder={r.action === "filter" ? "- *.bak   or   : .rsync-filter" : "*.log"}
+            placeholder={r.action === "filter" ? "- *.bak   |   : .rsync-filter" : "*.log"}
           />
-          <button class="switch" class:on={r.enabled} aria-label="Enabled" onclick={() => (r.enabled = !r.enabled)}></button>
-          <button class="icon-btn" title="Move up" onclick={() => move(i, -1)} disabled={i === 0}>↑</button>
-          <button class="icon-btn" title="Move down" onclick={() => move(i, 1)} disabled={i === rules.length - 1}>↓</button>
-          <button class="icon-btn" title="Delete" onclick={() => rules.splice(i, 1)}>✕</button>
+          <button class="switch" class:on={r.enabled} aria-label={t("filters.enabled")} onclick={() => (r.enabled = !r.enabled)}></button>
+          <button class="icon-btn" title={t("filters.up")} onclick={() => move(i, -1)} disabled={i === 0}>↑</button>
+          <button class="icon-btn" title={t("filters.down")} onclick={() => move(i, 1)} disabled={i === rules.length - 1}>↓</button>
+          <button class="icon-btn" title={t("filters.delete")} onclick={() => rules.splice(i, 1)}>✕</button>
         </li>
       {/each}
     </ol>
   {:else}
-    <div class="empty muted">No rules yet — everything in the source is transferred.</div>
+    <div class="empty muted">{t("filters.empty")}</div>
   {/if}
 
   <div class="actions">
-    <button class="btn" onclick={() => add("exclude")}>+ Exclude</button>
-    <button class="btn" onclick={() => add("include")}>+ Include</button>
-    <button class="btn" onclick={() => add("filter")}>+ Raw filter rule</button>
+    <button class="btn" onclick={() => add("exclude")}>{t("filters.addExclude")}</button>
+    <button class="btn" onclick={() => add("include")}>{t("filters.addInclude")}</button>
+    <button class="btn" onclick={() => add("filter")}>{t("filters.addRaw")}</button>
   </div>
 
   <div class="quick">
-    <span class="muted">Quick exclude:</span>
+    <span class="muted">{t("filters.quick")}</span>
     {#each common as c}
       <button
         class="chip mono"

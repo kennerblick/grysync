@@ -1,6 +1,7 @@
 <script lang="ts">
   import { pickPath } from "../api";
   import { compareVersions, type RsyncOption } from "../options";
+  import { choiceLabel, optionHelp, optionLabel, optionPlaceholder, t } from "../i18n.svelte";
   import { store } from "../store.svelte";
 
   let { option: o }: { option: RsyncOption } = $props();
@@ -36,7 +37,7 @@
   }
 
   async function browse() {
-    const path = await pickPath(o.pick !== "file", o.label);
+    const path = await pickPath(o.pick !== "file", optionLabel(o));
     if (path) set(path);
   }
 </script>
@@ -44,16 +45,16 @@
 <div class="row" class:active class:danger={o.danger && active}>
   <div class="text">
     <div class="title">
-      <span class="label">{o.label}</span>
+      <span class="label">{optionLabel(o)}</span>
       <code class="flag">{flagText}</code>
-      {#if o.danger}<span class="badge danger">destructive</span>{/if}
+      {#if o.danger}<span class="badge danger">{t("option.destructive")}</span>{/if}
       {#if o.since}
-        <span class="badge" class:warn={unsupported} title="Requires rsync {o.since}">≥ {o.since}</span>
+        <span class="badge" class:warn={unsupported} title={t("option.requires", { v: o.since })}>≥ {o.since}</span>
       {/if}
     </div>
-    <div class="help">{o.help}</div>
+    <div class="help">{optionHelp(o)}</div>
     {#if unsupported && active}
-      <div class="unsupported">Your rsync ({store.info?.version}) does not know this option.</div>
+      <div class="unsupported">{t("option.unsupported", { v: store.info?.version ?? "" })}</div>
     {/if}
   </div>
 
@@ -65,42 +66,42 @@
         class:danger={o.danger}
         role="switch"
         aria-checked={value === true}
-        aria-label={o.label}
+        aria-label={optionLabel(o)}
         onclick={() => set(value !== true)}
       ></button>
     {:else if o.kind === "count"}
-      <div class="segmented" role="radiogroup" aria-label={o.label}>
+      <div class="segmented" role="radiogroup" aria-label={optionLabel(o)}>
         {#each [0, 1, 2, 3] as n}
-          <button class:on={(Number(value) || 0) === n} onclick={() => set(n)}>{n === 0 ? "off" : "×" + n}</button>
+          <button class:on={(Number(value) || 0) === n} onclick={() => set(n)}>{n === 0 ? t("option.off") : "×" + n}</button>
         {/each}
       </div>
     {:else if o.kind === "select"}
       <select value={typeof value === "string" ? value : ""} onchange={(e) => set(e.currentTarget.value)}>
-        <option value="">default</option>
+        <option value="">{t("option.default")}</option>
         {#each o.choices ?? [] as c}
-          <option value={c.value}>{c.label}</option>
+          <option value={c.value}>{choiceLabel(o, c.value, c.label)}</option>
         {/each}
       </select>
     {:else if o.kind === "list"}
       <div class="list">
         {#each list as item, i}
           <div class="line">
-            <input value={item} placeholder={o.placeholder} oninput={(e) => setListItem(i, e.currentTarget.value)} />
-            <button class="icon-btn" title="Remove" onclick={() => removeListItem(i)}>✕</button>
+            <input value={item} placeholder={optionPlaceholder(o)} oninput={(e) => setListItem(i, e.currentTarget.value)} />
+            <button class="icon-btn" title={t("option.remove")} onclick={() => removeListItem(i)}>✕</button>
           </div>
         {/each}
-        <button class="btn small" onclick={() => set([...list, ""])}>+ Add</button>
+        <button class="btn small" onclick={() => set([...list, ""])}>{t("option.add")}</button>
       </div>
     {:else}
       <div class="line">
         <input
           type={o.kind === "number" ? "number" : "text"}
           value={value ?? ""}
-          placeholder={o.placeholder}
+          placeholder={optionPlaceholder(o)}
           oninput={(e) => set(e.currentTarget.value)}
         />
         {#if o.kind === "path"}
-          <button class="btn small" onclick={browse}>Browse…</button>
+          <button class="btn small" onclick={browse}>{t("common.browse")}</button>
         {/if}
       </div>
     {/if}

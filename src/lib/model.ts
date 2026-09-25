@@ -1,3 +1,5 @@
+import type { LanguagePref } from "./locales";
+
 // Profile and application state. The whole AppState is persisted as JSON by
 // the Rust side (see src-tauri/src/store.rs).
 
@@ -50,6 +52,7 @@ export type Theme = "system" | "dark" | "light";
 export interface Settings {
   rsyncPath: string;
   theme: Theme;
+  language: LanguagePref;
   /** Ask before running a profile that deletes files without a dry run. */
   confirmDangerous: boolean;
 }
@@ -94,31 +97,30 @@ export function newProfile(name = "New sync"): Profile {
   };
 }
 
-export function defaultState(): AppState {
-  const p = newProfile("My first sync");
+export function defaultState(firstProfileName = "My first sync"): AppState {
+  const p = newProfile(firstProfileName);
   return {
     version: 1,
     profiles: [p],
     activeId: p.id,
-    settings: { rsyncPath: "", theme: "system", confirmDangerous: true },
+    settings: { rsyncPath: "", theme: "system", language: "system", confirmDangerous: true },
     history: [],
   };
 }
 
 export interface Preset {
-  id: string;
-  label: string;
-  help: string;
+  /** Label and help come from the translation keys `preset.<id>` and `preset.<id>.help`. */
+  id: "copy" | "mirror" | "backup" | "snapshot" | "update" | "move";
   options: Record<string, OptionValue>;
 }
 
 const base: Record<string, OptionValue> = { archive: true, "human-readable": 1, partial: true, stats: true };
 
 export const presets: Preset[] = [
-  { id: "copy", label: "Copy", help: "Copy new and changed files, never delete.", options: { ...base } },
-  { id: "mirror", label: "Mirror", help: "Make the destination an exact copy, deleting extra files.", options: { ...base, delete: true } },
-  { id: "backup", label: "Safe mirror", help: "Mirror, but keep replaced and deleted files with a ~ suffix.", options: { ...base, delete: true, backup: true } },
-  { id: "snapshot", label: "Snapshot", help: "Incremental snapshot: unchanged files are hard-linked to the previous snapshot (set Hard-link to directory).", options: { ...base, "hard-links": true, "link-dest": [""] } },
-  { id: "update", label: "Update only", help: "Only refresh files that already exist, skip newer files on the destination.", options: { ...base, existing: true, update: true } },
-  { id: "move", label: "Move", help: "Transfer files and remove them from the source afterwards.", options: { ...base, "remove-source-files": true } },
+  { id: "copy", options: { ...base } },
+  { id: "mirror", options: { ...base, delete: true } },
+  { id: "backup", options: { ...base, delete: true, backup: true } },
+  { id: "snapshot", options: { ...base, "hard-links": true, "link-dest": [""] } },
+  { id: "update", options: { ...base, existing: true, update: true } },
+  { id: "move", options: { ...base, "remove-source-files": true } },
 ];

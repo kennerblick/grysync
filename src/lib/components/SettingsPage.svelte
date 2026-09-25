@@ -1,5 +1,7 @@
 <script lang="ts">
   import { configPath, pickPath } from "../api";
+  import { t } from "../i18n.svelte";
+  import { locales, type LanguagePref, type MessageKey } from "../locales";
   import type { Theme } from "../model";
   import { store } from "../store.svelte";
 
@@ -7,14 +9,19 @@
   let path = $state("");
   configPath().then((p) => (path = p), () => {});
 
-  const themes: { id: Theme; label: string }[] = [
-    { id: "system", label: "System" },
-    { id: "dark", label: "Dark" },
-    { id: "light", label: "Light" },
+  const themes: { id: Theme; label: MessageKey }[] = [
+    { id: "system", label: "settings.themeSystem" },
+    { id: "dark", label: "settings.themeDark" },
+    { id: "light", label: "settings.themeLight" },
   ];
 
+  const languages: { id: LanguagePref; label: string }[] = $derived([
+    { id: "system", label: t("settings.languageSystem") },
+    ...locales,
+  ]);
+
   async function browse() {
-    const p = await pickPath(false, "Choose the rsync executable");
+    const p = await pickPath(false, t("settings.chooseRsync"));
     if (p) {
       s.rsyncPath = p;
       store.detect();
@@ -24,57 +31,64 @@
 
 <div class="page">
   <section class="card">
-    <h3>rsync executable</h3>
-    <p class="muted">
-      Leave empty to use <code>rsync</code> from your PATH. On Windows, point this to e.g. cwRsync or the rsync from
-      MSYS2/Git for Windows.
-    </p>
+    <h3>{t("settings.rsync")}</h3>
+    <p class="muted">{t("settings.rsyncHelp")}</p>
     <div class="line">
       <input bind:value={s.rsyncPath} placeholder="rsync" onchange={() => store.detect()} />
-      <button class="btn" onclick={browse}>Browse…</button>
-      <button class="btn" onclick={() => store.detect()}>Detect</button>
+      <button class="btn" onclick={browse}>{t("common.browse")}</button>
+      <button class="btn" onclick={() => store.detect()}>{t("settings.detect")}</button>
     </div>
     {#if store.info}
       <div class="found">
-        <span class="badge ok">found</span>
+        <span class="badge ok">{t("settings.found")}</span>
         <span>{store.info.flavor} {store.info.version}</span>
-        {#if store.info.protocol}<span class="muted">protocol {store.info.protocol}</span>{/if}
+        {#if store.info.protocol}<span class="muted">{t("settings.protocol", { n: store.info.protocol })}</span>{/if}
       </div>
       {#if store.info.flavor === "openrsync"}
-        <p class="warn">
-          This is openrsync (shipped with macOS), which supports only a subset of rsync's options. Install the real rsync,
-          e.g. <code>brew install rsync</code>, to use every option.
-        </p>
+        <p class="warn">{t("settings.openrsync")}</p>
       {/if}
       <details>
-        <summary class="muted">Version details</summary>
+        <summary class="muted">{t("settings.versionDetails")}</summary>
         <pre class="mono">{store.info.raw}</pre>
       </details>
     {:else if store.infoError}
-      <div class="found"><span class="badge danger">not found</span><span>{store.infoError}</span></div>
+      <div class="found"><span class="badge danger">{t("settings.notFound")}</span><span>{store.infoError}</span></div>
     {/if}
   </section>
 
   <section class="card">
-    <h3>Appearance</h3>
-    <div class="segmented">
-      {#each themes as t}
-        <button class:on={s.theme === t.id} onclick={() => (s.theme = t.id)}>{t.label}</button>
-      {/each}
+    <h3>{t("settings.appearance")}</h3>
+    <div class="rows">
+      <div class="row">
+        <span>{t("settings.language")}</span>
+        <div class="segmented">
+          {#each languages as l}
+            <button class:on={s.language === l.id} onclick={() => (s.language = l.id)}>{l.label}</button>
+          {/each}
+        </div>
+      </div>
+      <div class="row">
+        <span>{t("settings.theme")}</span>
+        <div class="segmented">
+          {#each themes as th}
+            <button class:on={s.theme === th.id} onclick={() => (s.theme = th.id)}>{t(th.label)}</button>
+          {/each}
+        </div>
+      </div>
     </div>
   </section>
 
   <section class="card">
-    <h3>Safety</h3>
+    <h3>{t("settings.safety")}</h3>
     <label class="check">
-      <button class="switch" class:on={s.confirmDangerous} aria-label="Confirm" onclick={() => (s.confirmDangerous = !s.confirmDangerous)}></button>
-      Ask for confirmation before a run that deletes or moves files
+      <button class="switch" class:on={s.confirmDangerous} aria-label={t("settings.confirm")} onclick={() => (s.confirmDangerous = !s.confirmDangerous)}></button>
+      {t("settings.confirm")}
     </label>
   </section>
 
   <section class="card">
-    <h3>Storage</h3>
-    <p class="muted">Profiles, settings and history are stored in <code>{path}</code>.</p>
+    <h3>{t("settings.storage")}</h3>
+    <p class="muted">{t("settings.storageText", { path })}</p>
     {#if store.saveError}<p class="warn">{store.saveError}</p>{/if}
   </section>
 </div>
@@ -124,6 +138,24 @@
     white-space: pre-wrap;
     font-size: 12px;
     color: var(--muted);
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .row > span {
+    width: 90px;
+    color: var(--muted);
+    font-size: 13px;
   }
 
   .check {

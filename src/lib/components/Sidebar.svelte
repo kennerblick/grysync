@@ -1,5 +1,6 @@
 <script lang="ts">
   import { categories, options, type CategoryId } from "../options";
+  import { categoryLabel, t } from "../i18n.svelte";
   import { store } from "../store.svelte";
 
   export type View = "sync" | CategoryId | "activity" | "settings";
@@ -29,16 +30,16 @@
     <div class="logo">⟳</div>
     <div>
       <div class="name">grysync</div>
-      <div class="tag">rsync, beautifully</div>
+      <div class="tag">{t("app.tagline")}</div>
     </div>
   </div>
 
-  <input class="search" type="search" placeholder="Search {options.length} options…" bind:value={search} />
+  <input class="search" type="search" placeholder={t("nav.search", { n: options.length })} bind:value={search} />
 
   <div class="section">
     <div class="section-title">
-      Profiles
-      <button class="icon-btn" title="New profile" onclick={() => { store.addProfile(); go("sync"); }}>＋</button>
+      {t("nav.profiles")}
+      <button class="icon-btn" title={t("nav.newProfile")} onclick={() => { store.addProfile(); go("sync"); }}>＋</button>
     </div>
     {#each store.state.profiles as p (p.id)}
       <button
@@ -47,20 +48,20 @@
         onclick={() => { store.state.activeId = p.id; go("sync"); }}
       >
         <span class="dot"></span>
-        <span class="label">{p.name || "Untitled"}</span>
+        <span class="label">{p.name || t("profile.untitled")}</span>
       </button>
     {/each}
   </div>
 
   <nav class="section">
-    <div class="section-title">Configure</div>
+    <div class="section-title">{t("nav.configure")}</div>
     <button class="item" class:on={view === "sync" && !search} onclick={() => go("sync")}>
-      <span class="ico">⇆</span><span class="label">Source &amp; target</span>
+      <span class="ico">⇆</span><span class="label">{t("nav.sourceTarget")}</span>
     </button>
     {#each categories.filter((c) => c.id !== "essentials") as c}
       <button class="item" class:on={view === c.id && !search} onclick={() => go(c.id)}>
         <span class="ico">{c.icon}</span>
-        <span class="label">{c.label}</span>
+        <span class="label">{categoryLabel(c)}</span>
         {#if counts[c.id]}<span class="count">{counts[c.id]}</span>{/if}
       </button>
     {/each}
@@ -68,19 +69,19 @@
 
   <nav class="section bottom">
     <button class="item" class:on={view === "activity" && !search} onclick={() => go("activity")}>
-      <span class="ico">☰</span><span class="label">Activity</span>
+      <span class="ico">☰</span><span class="label">{t("nav.activity")}</span>
       {#if store.status === "running"}<span class="pulse"></span>{/if}
     </button>
     <button class="item" class:on={view === "settings" && !search} onclick={() => go("settings")}>
-      <span class="ico">⚙</span><span class="label">Settings</span>
+      <span class="ico">⚙</span><span class="label">{t("nav.settings")}</span>
     </button>
     <div class="version">
       {#if store.info}
         <span class="badge ok">{store.info.flavor} {store.info.version}</span>
       {:else if store.infoError}
-        <button class="badge danger as-link" onclick={() => go("settings")}>rsync not found</button>
+        <button class="badge danger as-link" onclick={() => go("settings")}>{t("nav.rsyncNotFound")}</button>
       {:else}
-        <span class="badge">detecting rsync…</span>
+        <span class="badge">{t("nav.detecting")}</span>
       {/if}
     </div>
   </nav>

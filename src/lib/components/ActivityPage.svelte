@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { exitMessage } from "../args";
+  import { exitMessage, formatDate, t } from "../i18n.svelte";
   import { formatDuration } from "../format";
   import { store } from "../store.svelte";
 
@@ -25,14 +25,14 @@
 <div class="page">
   <section class="card log">
     <header>
-      <h3>Output</h3>
+      <h3>{t("activity.output")}</h3>
       <div class="tools">
-        <label><input type="checkbox" bind:checked={errorsOnly} /> Errors only</label>
-        <label><input type="checkbox" bind:checked={follow} /> Follow</label>
+        <label><input type="checkbox" bind:checked={errorsOnly} /> {t("activity.errorsOnly")}</label>
+        <label><input type="checkbox" bind:checked={follow} /> {t("activity.follow")}</label>
         <button
           class="btn small"
           onclick={() => navigator.clipboard.writeText(store.lines.map((l) => l.text).join("\n"))}
-          disabled={!store.lines.length}>Copy log</button
+          disabled={!store.lines.length}>{t("activity.copyLog")}</button
         >
       </div>
     </header>
@@ -40,16 +40,16 @@
       {#each shown as l}
         <div class="l {l.stream} {kind(l.text)}">{l.text}</div>
       {:else}
-        <div class="muted">No output yet. Press Dry run to preview what rsync would do.</div>
+        <div class="muted">{t("activity.empty")}</div>
       {/each}
     </div>
   </section>
 
   <section class="card">
     <header>
-      <h3>History</h3>
+      <h3>{t("activity.history")}</h3>
       {#if store.state.history.length}
-        <button class="btn small ghost" onclick={() => (store.state.history = [])}>Clear</button>
+        <button class="btn small ghost" onclick={() => (store.state.history = [])}>{t("activity.clear")}</button>
       {/if}
     </header>
     {#if store.state.history.length}
@@ -57,23 +57,23 @@
         {#each store.state.history as h}
           <li>
             <span class="badge {h.cancelled ? 'warn' : h.code === 0 ? 'ok' : 'danger'}">
-              {h.cancelled ? "stopped" : h.code === 0 ? "ok" : `code ${h.code ?? "?"}`}
+              {h.cancelled ? t("activity.stopped") : h.code === 0 ? t("activity.ok") : t("activity.code", { code: h.code ?? "?" })}
             </span>
             <div class="h-main">
               <div>
                 <strong>{h.profileName}</strong>
-                {#if h.dryRun}<span class="badge accent">dry run</span>{/if}
-                <span class="muted">· {new Date(h.startedAt).toLocaleString()} · {formatDuration(h.durationMs)}</span>
+                {#if h.dryRun}<span class="badge accent">{t("activity.dryRun")}</span>{/if}
+                <span class="muted">· {formatDate(h.startedAt)} · {formatDuration(h.durationMs)}</span>
               </div>
               <div class="muted small">{exitMessage(h.code)}</div>
               <code class="small cmd" title={h.command}>{h.command}</code>
             </div>
-            <button class="icon-btn" title="Copy command" onclick={() => navigator.clipboard.writeText(h.command)}>⧉</button>
+            <button class="icon-btn" title={t("run.copy")} onclick={() => navigator.clipboard.writeText(h.command)}>⧉</button>
           </li>
         {/each}
       </ul>
     {:else}
-      <div class="muted">Runs will be listed here.</div>
+      <div class="muted">{t("activity.noHistory")}</div>
     {/if}
   </section>
 </div>

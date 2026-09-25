@@ -22,6 +22,7 @@
 - **Streaming log** with colour for itemized changes, deletions and errors, plus a run history with exit-code explanations.
 - **Safety net.** Checks for conflicting options, options your rsync does not support and missing endpoints. Runs that delete files ask for confirmation first and offer a dry run.
 - **Profiles.** Save as many sync jobs as you like. They are stored as JSON in your config directory.
+- **English and German.** The UI follows the system language and can be switched under **Settings**. Search works in both languages.
 - **Fast and small.** A native Rust backend starts rsync directly, with no shell in between, so there are no quoting or injection problems. Dark and light themes are included.
 
 ![Activity view](docs/screenshot-activity.png)
@@ -63,6 +64,10 @@ npm run check && npm test            # type check + frontend unit tests
 cd src-tauri && cargo test           # backend tests (run real rsync if installed)
 ```
 
+### Adding a language
+
+Copy `src/lib/locales/de.ts` and `options.de.ts`, translate them and register the language in `src/lib/locales/index.ts`. The type checker and `locales.test.ts` report missing keys.
+
 ## Project layout
 
 ```
@@ -70,6 +75,8 @@ src/                     Svelte frontend
   lib/options.ts         catalogue of all rsync options
   lib/args.ts            profile → argument vector, validation, exit codes
   lib/store.svelte.ts    app state, persistence, run control
+  lib/locales/           UI translations (en.ts is the reference, de.ts,
+                         options.de.ts for the option catalogue)
   lib/components/        UI components
 src-tauri/src/
   runner.rs              spawns rsync, streams output, cancellation
@@ -85,6 +92,10 @@ Push a tag like `v0.1.0`. The *Release* workflow builds installers for Linux (x6
 ## Deutsch (Kurzfassung)
 
 grysync ist eine moderne grafische Oberfläche für rsync. Sie deckt alle Optionen ab, zeigt live den erzeugten Befehl und den Fortschritt, bietet Profile und Filterregeln und warnt vor gefährlichen Kombinationen. Sie läuft unter Linux, macOS und Windows. Voraussetzung ist ein installiertes `rsync`.
+
+Die Oberfläche gibt es auf Deutsch und Englisch. Sie richtet sich nach der Systemsprache und lässt sich unter **Einstellungen → Darstellung → Sprache** umstellen.
+
+![grysync auf Deutsch](docs/screenshot-de.png)
 
 ## License
 

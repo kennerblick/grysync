@@ -90,14 +90,18 @@ describe("validate", () => {
   });
 
   it("warns about deletion without dry run and conflicting options", () => {
-    const texts = validate(profile({ options: { delete: true, checksum: true, "size-only": true } })).map((i) => i.text);
-    expect(texts.some((t) => t.includes("deletes files"))).toBe(true);
-    expect(texts.some((t) => t.includes("exclude each other"))).toBe(true);
+    const keys = validate(profile({ options: { delete: true, checksum: true, "size-only": true } })).map((i) => i.key);
+    expect(keys).toContain("issue.deletesWithoutDryRun");
+    expect(keys).toContain("conflict.checksumSizeOnly");
   });
 
   it("flags options the installed rsync does not support", () => {
     const issues = validate(profile({ options: { mkpath: true } }), "3.1.3");
-    expect(issues).toContainEqual({ level: "error", text: "--mkpath needs rsync 3.2.3 or newer (installed: 3.1.3)." });
+    expect(issues).toContainEqual({
+      level: "error",
+      key: "issue.tooOld",
+      params: { option: "mkpath", since: "3.2.3", version: "3.1.3" },
+    });
     expect(validate(profile({ options: { mkpath: true } }), "3.2.7")).toEqual([]);
   });
 
@@ -105,6 +109,6 @@ describe("validate", () => {
     const p = profile();
     p.source = { kind: "ssh", user: "", host: "a", path: "/", port: "" };
     p.dest = { kind: "ssh", user: "", host: "b", path: "/", port: "" };
-    expect(validate(p).some((i) => i.text.includes("two remote hosts"))).toBe(true);
+    expect(validate(p).map((i) => i.key)).toContain("issue.remoteToRemote");
   });
 });

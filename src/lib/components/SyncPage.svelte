@@ -1,7 +1,8 @@
 <script lang="ts">
   import { pickPath } from "../api";
   import { presets, type Preset } from "../model";
-  import { options } from "../options";
+  import { categories, options } from "../options";
+  import { categoryLabel, t } from "../i18n.svelte";
   import { store } from "../store.svelte";
   import EndpointCard from "./EndpointCard.svelte";
   import OptionRow from "./OptionRow.svelte";
@@ -27,60 +28,57 @@
   }
 
   async function browseKey() {
-    const path = await pickPath(false, "Choose SSH private key");
+    const path = await pickPath(false, t("ssh.chooseKey"));
     if (path) p.ssh.identity = path;
   }
 </script>
 
 <div class="page">
   <div class="endpoints">
-    <EndpointCard endpoint={p.source} title="Source" isSource />
-    <button class="swap" title="Swap source and destination" onclick={swap}>⇄</button>
-    <EndpointCard endpoint={p.dest} title="Destination" />
+    <EndpointCard endpoint={p.source} isSource />
+    <button class="swap" title={t("sync.swap")} onclick={swap}>⇄</button>
+    <EndpointCard endpoint={p.dest} />
   </div>
 
   {#if usesSsh}
     <section class="card ssh">
-      <h3>SSH connection</h3>
+      <h3>{t("ssh.title")}</h3>
       <div class="grid">
         <label>
-          <span>Port</span>
+          <span>{t("ssh.port")}</span>
           <input bind:value={p.ssh.port} placeholder="22" inputmode="numeric" />
         </label>
         <label>
-          <span>Private key</span>
+          <span>{t("ssh.key")}</span>
           <div class="line">
             <input bind:value={p.ssh.identity} placeholder="~/.ssh/id_ed25519" />
-            <button class="btn" onclick={browseKey}>Browse…</button>
+            <button class="btn" onclick={browseKey}>{t("common.browse")}</button>
           </div>
         </label>
         <label>
-          <span>Extra ssh options</span>
+          <span>{t("ssh.extra")}</span>
           <input bind:value={p.ssh.extra} placeholder="-o StrictHostKeyChecking=accept-new" />
         </label>
       </div>
-      <p class="muted">
-        grysync cannot answer password prompts — use key-based authentication (ssh-agent works). Set "Remote shell" under
-        Remote &amp; network to take full control of the ssh command.
-      </p>
+      <p class="muted">{t("ssh.note")}</p>
     </section>
   {/if}
 
   <section class="card">
-    <h3>Quick start</h3>
-    <p class="muted">Pick a starting point — it replaces the current options. Fine-tune everything afterwards.</p>
+    <h3>{t("sync.quickStart")}</h3>
+    <p class="muted">{t("sync.quickStartHelp")}</p>
     <div class="presets">
       {#each presets as preset}
         <button class="preset" class:on={isActive(preset)} onclick={() => apply(preset)}>
-          <strong>{preset.label}</strong>
-          <span>{preset.help}</span>
+          <strong>{t(`preset.${preset.id}`)}</strong>
+          <span>{t(`preset.${preset.id}.help`)}</span>
         </button>
       {/each}
     </div>
   </section>
 
   <section class="card options">
-    <h3>Essentials</h3>
+    <h3>{categoryLabel(categories[0])}</h3>
     {#each essentials as o (o.id)}
       <OptionRow option={o} />
     {/each}
